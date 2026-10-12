@@ -72,18 +72,20 @@
         <!-- 4. 최소 입력 영역 -->
         <section id="subscribe" class="content-section subscribe-section">
             <h2>소비기한 알림 받기</h2>
-            <form class="subscribe-form">
+            <form id="subscribe-form" class="subscribe-form" novalidate>
                 <label class="email-field" for="email">이메일 주소
                     <input type="email" id="email" name="email" placeholder="name@example.com" required>
                 </label>
-                <button class="primary-button" type="submit">소비기한 알림 신청하기</button>
+                <button id="subscribeButton" class="primary-button" type="submit">소비기한 알림 신청하기</button>
             </form>
+            <p id="subscribeMessage" class="subscribe-message" aria-live="polite">이메일을 입력한 뒤 알림을 신청해 주세요.</p>
         </section>
     </main>
 
     <footer class="site-footer">
         <p>© 2026 신선노트. All rights reserved.</p>
     </footer>
+    <script src="script.js"></script>
 </body>
 
 </html>
