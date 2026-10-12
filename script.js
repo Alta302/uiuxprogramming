@@ -5,6 +5,17 @@ const subscribeMessage = document.querySelector("#subscribeMessage");
 
 let isSubscribed = false;
 
+function showSubscribeMessage(message, result) {
+    subscribeMessage.textContent = message;
+    subscribeMessage.classList.remove("is-success", "is-error");
+
+    if (result === "success") {
+        subscribeMessage.classList.add("is-success");
+    } else if (result === "error") {
+        subscribeMessage.classList.add("is-error");
+    }
+}
+
 function handleSubscribe(event) {
     event.preventDefault();
 
@@ -12,24 +23,30 @@ function handleSubscribe(event) {
     emailInput.value = email;
 
     if (isSubscribed === true) {
-        subscribeMessage.textContent = "이미 알림 신청을 완료했습니다.";
+        showSubscribeMessage("이미 알림 신청을 완료했습니다.", "success");
         return;
     }
 
     if (email === "") {
-        subscribeMessage.textContent = "이메일 주소를 먼저 입력해 주세요.";
+        showSubscribeMessage("이메일 주소를 먼저 입력해 주세요.", "error");
         emailInput.focus();
         return;
     }
 
     if (!emailInput.checkValidity()) {
-        subscribeMessage.textContent = "올바른 이메일 주소를 입력해 주세요.";
+        showSubscribeMessage("올바른 이메일 주소를 입력해 주세요.", "error");
         emailInput.focus();
         return;
     }
 
     isSubscribed = true;
-    subscribeMessage.textContent = `${email} 주소로 알림 신청이 완료되었습니다. (화면 시연용이며 실제 이메일은 발송되지 않습니다.)`;
+    showSubscribeMessage(
+        `${email} 주소로 알림 신청이 완료되었습니다. (화면 시연용이며 실제 이메일은 발송되지 않습니다.)`,
+        "success"
+    );
+    subscribeButton.textContent = "신청 완료";
+    subscribeButton.disabled = true;
+    emailInput.readOnly = true;
 }
 
 subscribeForm.addEventListener("submit", handleSubscribe);

@@ -41,6 +41,12 @@ input[type="email"]:focus { border-color: #5b50c8; outline: 3px solid #d9d6ff; o
 .primary-button:focus { outline: 3px solid #b9b4ef; outline-offset: 3px; }
 .primary-button:active { transform: translateY(1px); }
 
+.subscribe-message { margin: 16px 0 0; padding: 12px 14px; border-radius: 8px; color: #4c4e60; background-color: #e8e7f8; overflow-wrap: anywhere; }
+.subscribe-message.is-error { color: #862b2b; background-color: #ffebeb; }
+.subscribe-message.is-success { color: #245c3a; background-color: #e7f7ed; }
+.primary-button:disabled,
+.primary-button:disabled:hover { background-color: #9696a2; cursor: not-allowed; transform: none; }
+
 .site-footer { padding: 16px 40px; color: #5e6272; font-size: 14px; }
 
 /* 뷰포트 너비가 768px 이하일 때 */
