@@ -64,3 +64,52 @@ function handleEditEmail() {
 subscribeForm.addEventListener("submit", handleSubscribe);
 editEmailButton.addEventListener("click", handleEditEmail);
 console.log("신선노트 JavaScript가 연결되었습니다.");
+
+// 6주차: input과 change에서 준비 상태를 갱신하고 click으로 결과를 표시합니다.
+const ingredientName = document.querySelector("#ingredientName");
+const ingredientCount = document.querySelector("#ingredientCount");
+const reminderCheck = document.querySelector("#reminderCheck");
+const previewButton = document.querySelector("#previewButton");
+const previewMessage = document.querySelector("#previewMessage");
+
+function updatePreviewState() {
+    const hasName = ingredientName.value.trim() !== "";
+    const isReady = hasName && reminderCheck.checked;
+    previewButton.disabled = !isReady;
+    previewButton.textContent = "알림 미리보기";
+    previewMessage.classList.remove("is-success");
+    previewMessage.classList.toggle("is-ready", isReady);
+
+    if (!hasName) {
+        previewMessage.textContent = "식재료 이름을 입력하고 알림 옵션을 선택해 주세요.";
+    } else if (!reminderCheck.checked) {
+        previewMessage.textContent = "소비기한 3일 전 알림 옵션을 선택해 주세요.";
+    } else {
+        previewMessage.textContent = `${ingredientName.value.trim()}의 알림을 미리 볼 수 있습니다.`;
+    }
+}
+
+function handleIngredientInput() {
+    const length = ingredientName.value.length;
+    const hasName = ingredientName.value.trim() !== "";
+    ingredientCount.textContent = `${length} / 10자 · ${hasName ? "입력한 식재료로 안내합니다." : "식재료 이름을 입력해 주세요."}`;
+    ingredientCount.classList.toggle("is-ready", hasName);
+    updatePreviewState();
+}
+
+function handlePreviewClick() {
+    if (ingredientName.value.trim() === "" || !reminderCheck.checked) {
+        updatePreviewState();
+        return;
+    }
+    previewMessage.textContent = `[미리보기] ${ingredientName.value.trim()}의 소비기한이 3일 남았습니다. 먼저 확인해 주세요. (실제 알림은 예약되지 않습니다.)`;
+    previewMessage.classList.remove("is-ready");
+    previewMessage.classList.add("is-success");
+    previewButton.textContent = "미리보기 완료";
+    previewButton.disabled = true;
+}
+
+ingredientName.addEventListener("input", handleIngredientInput);
+reminderCheck.addEventListener("change", updatePreviewState);
+previewButton.addEventListener("click", handlePreviewClick);
+handleIngredientInput();

@@ -69,6 +69,22 @@
             </ol>
         </section>
 
+        <!-- 6주차: 입력·선택·클릭에 반응하는 식재료 알림 미리보기 -->
+        <section id="reminder-preview" class="content-section">
+            <h2>식재료 알림 미리보기</h2>
+            <p>식재료 이름과 알림 옵션을 선택해 안내 문구를 확인해 보세요. 화면 시연용이며 실제 알림은 예약되지 않습니다.</p>
+            <div class="reminder-settings">
+                <label for="ingredientName">식재료 이름 (최대 10자)</label>
+                <input id="ingredientName" type="text" maxlength="10" placeholder="예: 두부" aria-describedby="ingredientCount">
+                <p id="ingredientCount" class="input-count" aria-live="polite">0 / 10자 · 식재료 이름을 입력해 주세요.</p>
+                <label class="check-row" for="reminderCheck">
+                    <input id="reminderCheck" type="checkbox"> 소비기한 3일 전 알림 미리보기
+                </label>
+                <button id="previewButton" class="primary-button" type="button" disabled>알림 미리보기</button>
+                <p id="previewMessage" class="subscribe-message" aria-live="polite">식재료 이름을 입력하고 알림 옵션을 선택해 주세요.</p>
+            </div>
+        </section>
+
         <!-- 4. 최소 입력 영역 -->
         <section id="subscribe" class="content-section subscribe-section">
             <h2>소비기한 알림 받기</h2>

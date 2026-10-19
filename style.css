@@ -49,6 +49,17 @@ input[type="email"]:focus { border-color: #5b50c8; outline: 3px solid #d9d6ff; o
 
 .site-footer { padding: 16px 40px; color: #5e6272; font-size: 14px; }
 
+/* 6주차: 식재료 알림 미리보기 */
+.reminder-settings { max-width: 570px; }
+.reminder-settings > label:first-child { font-weight: 700; }
+#ingredientName { display: block; width: 100%; margin-top: 8px; padding: 12px 14px; border: 1px solid #bfc1d1; border-radius: 8px; font: inherit; }
+#ingredientName:focus { outline: 3px solid #d9d6ff; border-color: #5b50c8; outline-offset: 2px; }
+.input-count { margin: 8px 0 16px; padding: 8px; border-radius: 8px; color: #5e6272; overflow-wrap: anywhere; }
+.check-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px; cursor: pointer; }
+.check-row input { flex-shrink: 0; width: 20px; height: 20px; margin-top: 3px; accent-color: #5b50c8; }
+.is-ready { color: #4038a5; background-color: #ebe9ff; }
+.subscribe-message.is-ready { color: #4038a5; background-color: #ebe9ff; }
+
 /* 뷰포트 너비가 768px 이하일 때 */
 @media (max-width: 768px) {
     body { font-size: 16px; }
