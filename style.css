@@ -60,6 +60,16 @@ input[type="email"]:focus { border-color: #5b50c8; outline: 3px solid #d9d6ff; o
 .is-ready { color: #4038a5; background-color: #ebe9ff; }
 .subscribe-message.is-ready { color: #4038a5; background-color: #ebe9ff; }
 
+/* 6주차: 주요 기능 탭 */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.tab { padding: 12px 16px; min-height: 48px; border: 1px solid #d7d4f6; border-radius: 8px; color: #4038a5; background-color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.tab:hover { background-color: #ebe9ff; }
+.tab.is-active { color: #fff; background-color: #5b50c8; border-color: #5b50c8; }
+.tab:focus-visible, .panel:focus-visible { outline: 3px solid #b9b4ef; outline-offset: 3px; }
+.panel { padding: 24px; border: 1px solid #d7d4f6; border-radius: 14px; background-color: #f4f3ff; overflow-wrap: anywhere; }
+.panel p:last-child { margin-bottom: 0; }
+.panel[hidden] { display: none; }
+
 /* 뷰포트 너비가 768px 이하일 때 */
 @media (max-width: 768px) {
     body { font-size: 16px; }
@@ -100,4 +110,7 @@ input[type="email"]:focus { border-color: #5b50c8; outline: 3px solid #d9d6ff; o
     }
 
     .primary-button { min-height: 48px; }
+
+    .tabs { flex-direction: column; align-items: stretch; }
+    .tab { width: 100%; text-align: left; }
 }

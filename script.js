@@ -113,3 +113,50 @@ ingredientName.addEventListener("input", handleIngredientInput);
 reminderCheck.addEventListener("change", updatePreviewState);
 previewButton.addEventListener("click", handlePreviewClick);
 handleIngredientInput();
+
+// 6주차: 선택한 탭과 연결된 패널만 활성화합니다.
+const tabs = document.querySelectorAll(".tab");
+const panels = document.querySelectorAll(".panel");
+
+function activateTab(selectedTab) {
+    tabs.forEach(function (tab) {
+        const isSelected = tab === selectedTab;
+        tab.classList.toggle("is-active", isSelected);
+        tab.setAttribute("aria-selected", String(isSelected));
+        tab.tabIndex = isSelected ? 0 : -1;
+    });
+    panels.forEach(function (panel) {
+        const isSelected = `#${panel.id}` === selectedTab.dataset.target;
+        panel.classList.toggle("is-active", isSelected);
+        panel.hidden = !isSelected;
+    });
+}
+
+function handleTabClick(event) {
+    activateTab(event.currentTarget);
+}
+
+// 방향키와 Home/End로도 탭을 선택할 수 있습니다.
+function handleTabKeydown(event) {
+    const index = Array.from(tabs).indexOf(event.currentTarget);
+    let nextIndex;
+    if (event.key === "ArrowRight") {
+        nextIndex = (index + 1) % tabs.length;
+    } else if (event.key === "ArrowLeft") {
+        nextIndex = (index - 1 + tabs.length) % tabs.length;
+    } else if (event.key === "Home") {
+        nextIndex = 0;
+    } else if (event.key === "End") {
+        nextIndex = tabs.length - 1;
+    } else {
+        return;
+    }
+    event.preventDefault();
+    activateTab(tabs[nextIndex]);
+    tabs[nextIndex].focus();
+}
+
+tabs.forEach(function (tab) {
+    tab.addEventListener("click", handleTabClick);
+    tab.addEventListener("keydown", handleTabKeydown);
+});

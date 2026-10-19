@@ -43,20 +43,26 @@
         <!-- 2. 주요 기능 영역 -->
         <section id="features" class="content-section">
             <h2>주요 기능</h2>
-            <ul class="feature-list">
-                <li class="feature-card">
-                    <h3>소비기한 D-day 정렬</h3>
-                    <p>임박한 날짜 순서대로 식재료를 자동 정렬하여 무엇을 먼저 먹어야 하는지 한눈에 보여줍니다.</p>
-                </li>
-                <li class="feature-card">
-                    <h3>소비기한 만료 전 리마인드</h3>
-                    <p>기한 만료 3일 전과 1일 전에 맞춰 푸시 알림과 이메일로 잊지 않게 알려줍니다.</p>
-                </li>
-                <li class="feature-card">
-                    <h3>냉장고 파먹기 레시피 매칭</h3>
-                    <p>기한이 얼마 남지 않은 재료들을 조합해 만들 수 있는 간단한 한 끼 레시피를 제안합니다.</p>
-                </li>
-            </ul>
+            <div class="tabs" role="tablist" aria-label="신선노트 주요 기능">
+                <button id="tab-expiry" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-expiry" data-target="#panel-expiry">소비기한 관리</button>
+                <button id="tab-reminder" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-reminder" data-target="#panel-reminder" tabindex="-1">만료 전 알림</button>
+                <button id="tab-recipe" class="tab" type="button" role="tab" aria-selected="false" aria-controls="panel-recipe" data-target="#panel-recipe" tabindex="-1">추천 레시피</button>
+            </div>
+            <div id="panel-expiry" class="panel is-active" role="tabpanel" aria-labelledby="tab-expiry" tabindex="0">
+                <h3>소비기한 D-day 정렬</h3>
+                <p>임박한 날짜 순서대로 식재료를 정렬하여 무엇을 먼저 먹어야 하는지 한눈에 보여줍니다.</p>
+                <p>예시: 두부 D-1 → 우유 D-3 → 당근 D-5 순서로 확인하고 먼저 소비하세요.</p>
+            </div>
+            <div id="panel-reminder" class="panel" role="tabpanel" aria-labelledby="tab-reminder" tabindex="0" hidden>
+                <h3>소비기한 만료 전 리마인드</h3>
+                <p>기한 만료 3일 전과 1일 전에 알림을 받아 식재료를 잊지 않도록 돕는 기능입니다.</p>
+                <p>아래 ‘식재료 알림 미리보기’에서 안내 문구를 체험해 보세요. 실제 알림은 발송되지 않습니다.</p>
+            </div>
+            <div id="panel-recipe" class="panel" role="tabpanel" aria-labelledby="tab-recipe" tabindex="0" hidden>
+                <h3>냉장고 파먹기 레시피 매칭</h3>
+                <p>기한이 얼마 남지 않은 재료들을 조합해 만들 수 있는 간단한 한 끼를 제안하는 기능입니다.</p>
+                <p>예시: 두부와 당근이 남았다면 두부 채소볶음으로 활용해 보세요.</p>
+            </div>
         </section>
 
         <!-- 3. 이용 방법 영역 -->
