@@ -114,3 +114,29 @@ input[type="email"]:focus { border-color: #5b50c8; outline: 3px solid #d9d6ff; o
     .tabs { flex-direction: column; align-items: stretch; }
     .tab { width: 100%; text-align: left; }
 }
+
+.registration { scroll-margin-top: 20px; }
+.registration-step[hidden], .registration [hidden] { display: none; }
+.flow-progress { padding: 12px 16px; border-radius: 8px; color: #4038a5; background-color: #ebe9ff; font-weight: 700; }
+.registration-step { max-width: 650px; overflow-wrap: anywhere; }
+.registration-step h3:focus { outline: none; }
+.registration label { display: block; font-weight: 700; }
+.registration input, .registration select { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 48px; margin-top: 8px; padding: 12px; border: 1px solid #bfc1d1; border-radius: 8px; background: #fff; color: inherit; font: inherit; }
+.registration input:focus, .registration select:focus { outline: 3px solid #d9d6ff; outline-offset: 2px; }
+.registration [aria-invalid="true"] { border: 2px solid #9d2439; }
+.field-help { margin: 8px 0; color: #5e6272; font-size: 14px; }
+.field-error { margin: 8px 0 16px; color: #9d2439; font-weight: 700; }
+.flow-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.secondary-button { min-height: 48px; padding: 12px 18px; border: 1px solid #5b50c8; border-radius: 8px; color: #4038a5; background: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.secondary-button:hover { background: #ebe9ff; }
+.secondary-button:focus-visible { outline: 3px solid #b9b4ef; outline-offset: 3px; }
+.flow-restart { margin-top: 24px; }
+.flow-summary { margin: 20px 0; padding: 20px; border: 1px solid #d7d4f6; border-radius: 12px; background: #f4f3ff; }
+.flow-summary dt { font-weight: 700; color: #4038a5; }
+.flow-summary dd { margin: 4px 0 16px; white-space: pre-wrap; }
+.flow-summary dd:last-child { margin-bottom: 0; }
+@media (max-width: 768px) {
+    .registration { padding: 24px 16px; }
+    .flow-actions { flex-direction: column; }
+    .registration button { width: 100%; min-height: 48px; }
+}
