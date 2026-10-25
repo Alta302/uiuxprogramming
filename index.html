@@ -24,6 +24,7 @@
             <a href="#features">주요 기능</a>
             <a href="#steps">이용 방법</a>
             <a href="#registration">식재료 등록</a>
+            <a href="#inventory">보관 목록</a>
             <a href="#subscribe">알림 신청</a>
         </nav>
     </header>
@@ -95,7 +96,7 @@
 
         <section id="registration" class="content-section registration" aria-labelledby="registrationTitle">
             <h2 id="registrationTitle">내 식재료 등록하기</h2>
-            <p>소비기한과 알림 시점을 정하고 내용을 확인해 보세요. 화면 시연용으로, 서버 저장이나 실제 알림 발송은 하지 않습니다. 새로고침하면 입력 내용이 사라집니다.</p>
+            <p>소비기한과 알림 시점을 정하고 내용을 확인해 보세요. 화면 시연용으로, 서버 저장이나 실제 알림 발송은 하지 않습니다. 새로고침하면 입력 내용과 보관 목록이 사라집니다.</p>
             <p id="registrationProgress" class="flow-progress" role="status">1 / 5 · 시작</p>
 
             <div class="registration-step" data-step="0">
@@ -153,11 +154,32 @@
 
             <div class="registration-step" data-step="4" hidden>
                 <h3 tabindex="-1">식재료 등록 시연이 완료되었습니다</h3>
-                <p>아래 내용을 확인하고 소비기한 전에 식재료를 챙겨 드세요. 실제 저장·알림 예약은 되지 않았습니다.</p>
+                <p>아래 내용을 보관 목록에 담아 소비 여부를 관리해 보세요. 서버 저장이나 실제 알림 예약은 되지 않습니다.</p>
                 <dl id="registrationResult" class="flow-summary"></dl>
-                <p>다른 식재료로 체험하려면 ‘다시 시작’을 눌러 주세요.</p>
+                <button id="addToInventory" class="primary-button" type="button">보관 목록에 담기</button>
+                <p id="inventoryAddMessage" class="field-help" role="status"></p>
+                <p>다른 식재료를 등록하려면 ‘다시 시작’을 눌러 주세요. 이미 보관 목록에 담은 식재료는 유지됩니다.</p>
             </div>
             <button id="registrationRestart" class="secondary-button flow-restart" type="button" hidden>다시 시작 (입력 내용 지우기)</button>
+        </section>
+
+        <section id="inventory" class="content-section inventory" aria-labelledby="inventoryTitle">
+            <h2 id="inventoryTitle">내 식재료 보관 목록</h2>
+            <p>소비기한이 가까운 재료부터 확인하고 먹은 재료는 ‘소비 완료’를 눌러 주세요. 잘못 눌렀다면 보관 목록으로 되돌릴 수 있습니다.</p>
+            <p class="field-help">현재 화면에서만 관리됩니다. 새로고침하면 목록이 초기화되며, 실제 알림은 발송되지 않습니다.</p>
+            <p id="inventoryCount" class="flow-progress">보관 중 0개 · 소비 완료 0개</p>
+            <p id="inventoryFeedback" class="inventory-feedback" role="status"></p>
+            <div class="inventory-group">
+                <h3>보관 중</h3>
+                <p id="storedEmpty">아직 담은 식재료가 없습니다. 식재료 등록을 완료한 뒤 ‘보관 목록에 담기’를 눌러 주세요.</p>
+                <ul id="storedFoodList" class="inventory-list" aria-label="보관 중인 식재료"></ul>
+            </div>
+            <div class="inventory-group">
+                <h3>소비 완료</h3>
+                <p id="consumedEmpty">아직 소비 완료한 식재료가 없습니다. 보관 중인 재료를 먹었다면 ‘소비 완료’를 눌러 주세요.</p>
+                <ul id="consumedFoodList" class="inventory-list" aria-label="소비 완료한 식재료"></ul>
+            </div>
+            <a class="inventory-register-link" href="#registration">식재료 등록 화면으로 이동</a>
         </section>
 
         <!-- 4. 최소 입력 영역 -->

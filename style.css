@@ -140,3 +140,23 @@ input[type="email"]:focus { border-color: #5b50c8; outline: 3px solid #d9d6ff; o
     .flow-actions { flex-direction: column; }
     .registration button { width: 100%; min-height: 48px; }
 }
+
+.inventory { scroll-margin-top: 20px; }
+.inventory-group { margin-top: 28px; }
+.inventory-list { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; }
+.inventory-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; min-width: 0; padding: 20px; border: 1px solid #d7d4f6; border-radius: 12px; background: #f4f3ff; }
+.inventory-details { flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
+.inventory-details h4 { margin: 0 0 8px; font-size: 18px; }
+.inventory-details p { margin: 4px 0 0; }
+.inventory-card.is-consumed { background: #f0f7f2; border-color: #c2ddcb; }
+.inventory-status { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 6px; color: #4038a5; background: #e8e5ff; font-weight: 700; }
+.is-consumed .inventory-status { color: #245c3a; background: #dcefe2; }
+.inventory-feedback { color: #245c3a; font-weight: 700; overflow-wrap: anywhere; }
+.inventory-register-link { display: inline-block; margin-top: 24px; padding: 10px 0; }
+.inventory-register-link:focus-visible { outline: 3px solid #b9b4ef; outline-offset: 3px; }
+@media (max-width: 768px) {
+    .inventory { padding: 24px 16px; }
+    .inventory-card { padding: 16px; }
+    .inventory-details { flex-basis: 100%; }
+    .inventory-card button { width: 100%; min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
+}
