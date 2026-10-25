@@ -160,3 +160,152 @@ tabs.forEach(function (tab) {
     tab.addEventListener("click", handleTabClick);
     tab.addEventListener("keydown", handleTabKeydown);
 });
+
+const registrationSteps = document.querySelectorAll('.registration-step');
+const registrationProgress = document.querySelector('#registrationProgress');
+const registrationRestart = document.querySelector('#registrationRestart');
+const foodForm = document.querySelector('#foodForm');
+const timingForm = document.querySelector('#timingForm');
+const foodName = document.querySelector('#foodName');
+const expiryDate = document.querySelector('#expiryDate');
+const reminderTiming = document.querySelector('#reminderTiming');
+const registrationSummary = document.querySelector('#registrationSummary');
+const registrationResult = document.querySelector('#registrationResult');
+const registrationLabels = ['시작', '식재료 입력', '알림 선택', '내용 확인', '완료'];
+let registrationStep = 0;
+
+function todayString() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function reminderDateString() {
+    const [year, month, day] = expiryDate.value.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    date.setUTCDate(date.getUTCDate() - Number(reminderTiming.value));
+    return date.toISOString().slice(0, 10);
+}
+
+function showRegistrationStep(step) {
+    registrationStep = step;
+    registrationSteps.forEach(function (panel) {
+        panel.hidden = Number(panel.dataset.step) !== step;
+    });
+    registrationProgress.textContent = `${step + 1} / 5 · ${registrationLabels[step]}`;
+    registrationRestart.hidden = step === 0;
+    const heading = document.querySelector(`.registration-step[data-step="${step}"] h3`);
+    heading.focus();
+}
+
+function setRegistrationError(field, message) {
+    document.querySelector(`#${field.id}Error`).textContent = message;
+    if (message) {
+        field.setAttribute('aria-invalid', 'true');
+    } else {
+        field.removeAttribute('aria-invalid');
+    }
+}
+
+function validateFood() {
+    expiryDate.min = todayString();
+    const nameError = !foodName.value.trim()
+        ? '식재료 이름을 입력해 주세요. 예: 두부'
+        : foodName.value.trim().length > 20 ? '식재료 이름을 20자 이내로 줄여 주세요.' : '';
+    const dateError = !expiryDate.value || !expiryDate.validity.valid
+        ? '소비기한을 오늘 또는 이후의 올바른 날짜로 선택해 주세요.' : '';
+    setRegistrationError(foodName, nameError);
+    setRegistrationError(expiryDate, dateError);
+    const invalidField = nameError ? foodName : dateError ? expiryDate : null;
+    if (invalidField) {
+        if (registrationStep !== 1) showRegistrationStep(1);
+        invalidField.focus();
+    }
+    return !invalidField;
+}
+
+function validateTiming() {
+    let message = '';
+    if (!['3', '1', '0'].includes(reminderTiming.value)) {
+        message = '알림 시점을 선택해 주세요. 3일 전, 1일 전, 당일 중 고를 수 있습니다.';
+    } else if (reminderDateString() < todayString()) {
+        message = '선택한 알림 날짜가 이미 지났습니다. 더 가까운 시점이나 소비기한 당일로 바꿔 주세요.';
+    }
+    setRegistrationError(reminderTiming, message);
+    if (message) {
+        if (registrationStep !== 2) showRegistrationStep(2);
+        reminderTiming.focus();
+    }
+    return !message;
+}
+
+function renderRegistrationSummary(target) {
+    const values = [
+        ['식재료', foodName.value.trim()],
+        ['소비기한', expiryDate.value],
+        ['알림 시점', reminderTiming.selectedOptions[0].textContent],
+        ['알림 예정일 (시연)', reminderDateString()]
+    ];
+    target.replaceChildren();
+    values.forEach(function ([label, value]) {
+        const term = document.createElement('dt');
+        const detail = document.createElement('dd');
+        term.textContent = label;
+        detail.textContent = value;
+        target.append(term, detail);
+    });
+}
+
+function validateRegistration() {
+    if (!validateFood()) return false;
+    return validateTiming();
+}
+
+document.querySelector('#registrationStart').addEventListener('click', function () {
+    expiryDate.min = todayString();
+    showRegistrationStep(1);
+});
+
+foodForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (registrationStep !== 1 || !validateFood()) return;
+    showRegistrationStep(2);
+});
+
+timingForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (registrationStep !== 2 || !validateRegistration()) return;
+    renderRegistrationSummary(registrationSummary);
+    showRegistrationStep(3);
+});
+
+document.querySelectorAll('[data-back]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        showRegistrationStep(Number(button.dataset.back));
+    });
+});
+
+[foodName, expiryDate, reminderTiming].forEach(function (field) {
+    field.addEventListener(field === reminderTiming ? 'change' : 'input', function () {
+        setRegistrationError(field, '');
+    });
+});
+
+document.querySelector('#registrationComplete').addEventListener('click', function () {
+    if (registrationStep !== 3 || !validateRegistration()) return;
+    renderRegistrationSummary(registrationResult);
+    showRegistrationStep(4);
+});
+
+registrationRestart.addEventListener('click', function () {
+    foodForm.reset();
+    timingForm.reset();
+    [foodName, expiryDate, reminderTiming].forEach(function (field) {
+        setRegistrationError(field, '');
+    });
+    registrationSummary.replaceChildren();
+    registrationResult.replaceChildren();
+    expiryDate.min = todayString();
+    showRegistrationStep(0);
+});
+
+expiryDate.min = todayString();
