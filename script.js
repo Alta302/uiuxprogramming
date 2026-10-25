@@ -173,6 +173,7 @@ const registrationSummary = document.querySelector('#registrationSummary');
 const registrationResult = document.querySelector('#registrationResult');
 const registrationLabels = ['시작', '식재료 입력', '알림 선택', '내용 확인', '완료'];
 let registrationStep = 0;
+let pendingInventoryItem = null;
 
 function todayString() {
     const now = new Date();
@@ -293,10 +294,21 @@ document.querySelectorAll('[data-back]').forEach(function (button) {
 document.querySelector('#registrationComplete').addEventListener('click', function () {
     if (registrationStep !== 3 || !validateRegistration()) return;
     renderRegistrationSummary(registrationResult);
+    pendingInventoryItem = {
+        name: foodName.value.trim(),
+        expiryDate: expiryDate.value,
+        timingLabel: reminderTiming.selectedOptions[0].textContent,
+        reminderDate: reminderDateString()
+    };
+    document.querySelector('#addToInventory').disabled = false;
+    document.querySelector('#inventoryAddMessage').textContent = '';
     showRegistrationStep(4);
 });
 
 registrationRestart.addEventListener('click', function () {
+    pendingInventoryItem = null;
+    document.querySelector('#addToInventory').disabled = false;
+    document.querySelector('#inventoryAddMessage').textContent = '';
     foodForm.reset();
     timingForm.reset();
     [foodName, expiryDate, reminderTiming].forEach(function (field) {
@@ -309,3 +321,102 @@ registrationRestart.addEventListener('click', function () {
 });
 
 expiryDate.min = todayString();
+
+const inventoryItems = [];
+let nextInventoryId = 1;
+const inventory = document.querySelector('#inventory');
+const storedFoodList = document.querySelector('#storedFoodList');
+const consumedFoodList = document.querySelector('#consumedFoodList');
+const inventoryFeedback = document.querySelector('#inventoryFeedback');
+const addToInventory = document.querySelector('#addToInventory');
+
+function expiryStatus(dateString) {
+    const days = Math.round((Date.parse(dateString) - Date.parse(todayString())) / 86400000);
+    if (days < 0) return `소비기한 ${Math.abs(days)}일 지남`;
+    return days === 0 ? '오늘까지 · D-day' : `D-${days}`;
+}
+
+function createInventoryCard(item) {
+    const card = document.createElement('li');
+    card.className = item.consumed ? 'inventory-card is-consumed' : 'inventory-card';
+    const details = document.createElement('div');
+    details.className = 'inventory-details';
+    const name = document.createElement('h4');
+    name.textContent = item.name;
+    const expiry = document.createElement('p');
+    expiry.textContent = `소비기한: ${item.expiryDate}`;
+    const timing = document.createElement('p');
+    timing.textContent = `알림: ${item.timingLabel} · ${item.reminderDate} (시연)`;
+    const status = document.createElement('span');
+    status.className = 'inventory-status';
+    status.textContent = item.consumed ? '소비 완료' : expiryStatus(item.expiryDate);
+    details.append(name, expiry, timing, status);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = item.consumed ? 'secondary-button' : 'primary-button';
+    button.dataset.foodId = item.id;
+    button.dataset.action = item.consumed ? 'restore' : 'consume';
+    button.textContent = item.consumed ? '보관 목록으로 되돌리기' : '소비 완료';
+    button.setAttribute('aria-label', `${item.name} ${button.textContent}`);
+    card.append(details, button);
+    return card;
+}
+
+function renderInventory() {
+    storedFoodList.replaceChildren();
+    consumedFoodList.replaceChildren();
+    const sorted = inventoryItems.slice().sort(function (a, b) {
+        return a.expiryDate.localeCompare(b.expiryDate) || a.id - b.id;
+    });
+    sorted.forEach(function (item) {
+        const list = item.consumed ? consumedFoodList : storedFoodList;
+        list.append(createInventoryCard(item));
+    });
+    const storedCount = storedFoodList.children.length;
+    const consumedCount = consumedFoodList.children.length;
+    document.querySelector('#inventoryCount').textContent = `보관 중 ${storedCount}개 · 소비 완료 ${consumedCount}개`;
+    const storedEmpty = document.querySelector('#storedEmpty');
+    storedEmpty.hidden = storedCount > 0;
+    storedEmpty.textContent = consumedCount > 0
+        ? '보관 중인 식재료를 모두 소비했습니다. 새 식재료를 등록하거나 소비 완료 목록에서 되돌릴 수 있습니다.'
+        : '아직 담은 식재료가 없습니다. 식재료 등록을 완료한 뒤 ‘보관 목록에 담기’를 눌러 주세요.';
+    document.querySelector('#consumedEmpty').hidden = consumedCount > 0;
+}
+
+function focusInventoryItem(id) {
+    inventory.querySelector(`button[data-food-id="${id}"]`).focus();
+}
+
+addToInventory.addEventListener('click', function () {
+    if (registrationStep !== 4 || !pendingInventoryItem) return;
+    const item = { ...pendingInventoryItem, id: nextInventoryId++, consumed: false };
+    inventoryItems.push(item);
+    pendingInventoryItem = null;
+    addToInventory.disabled = true;
+    document.querySelector('#inventoryAddMessage').textContent = '보관 목록에 담았습니다. 목록에서 소비 여부를 관리해 보세요.';
+    renderInventory();
+    inventoryFeedback.textContent = `보관 목록에 ‘${item.name}’ 항목을 담았습니다. 먹은 뒤 ‘소비 완료’를 눌러 주세요.`;
+    focusInventoryItem(item.id);
+});
+
+inventory.addEventListener('click', function (event) {
+    const button = event.target.closest('button[data-food-id]');
+    if (!button) return;
+    const item = inventoryItems.find(function (food) {
+        return food.id === Number(button.dataset.foodId);
+    });
+    if (!item) return;
+    if (button.dataset.action === 'consume' && !item.consumed) {
+        item.consumed = true;
+        inventoryFeedback.textContent = `‘${item.name}’ 항목을 소비 완료로 변경했습니다. 잘못 눌렀다면 보관 목록으로 되돌릴 수 있습니다.`;
+    } else if (button.dataset.action === 'restore' && item.consumed) {
+        item.consumed = false;
+        inventoryFeedback.textContent = `‘${item.name}’ 항목을 보관 목록으로 되돌렸습니다.`;
+    } else {
+        return;
+    }
+    renderInventory();
+    focusInventoryItem(item.id);
+});
+
+renderInventory();
