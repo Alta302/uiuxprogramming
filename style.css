@@ -121,8 +121,8 @@ input[type="email"]:focus { border-color: #5b50c8; outline: 3px solid #d9d6ff; o
 .registration-step { max-width: 650px; overflow-wrap: anywhere; }
 .registration-step h3:focus { outline: none; }
 .registration label { display: block; font-weight: 700; }
-.registration input, .registration select { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 48px; margin-top: 8px; padding: 12px; border: 1px solid #bfc1d1; border-radius: 8px; background: #fff; color: inherit; font: inherit; }
-.registration input:focus, .registration select:focus { outline: 3px solid #d9d6ff; outline-offset: 2px; }
+.registration input:not([type="checkbox"]), .registration select, .registration textarea { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 48px; margin-top: 8px; padding: 12px; border: 1px solid #bfc1d1; border-radius: 8px; background: #fff; color: inherit; font: inherit; }
+.registration input:focus, .registration select:focus, .registration textarea:focus { outline: 3px solid #d9d6ff; outline-offset: 2px; }
 .registration [aria-invalid="true"] { border: 2px solid #9d2439; }
 .field-help { margin: 8px 0; color: #5e6272; font-size: 14px; }
 .field-error { margin: 8px 0 16px; color: #9d2439; font-weight: 700; }
@@ -160,3 +160,18 @@ input[type="email"]:focus { border-color: #5b50c8; outline: 3px solid #d9d6ff; o
     .inventory-details { flex-basis: 100%; }
     .inventory-card button { width: 100%; min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
 }
+
+.registration-fields { min-width: 0; margin: 0; padding: 0; border: 0; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.registration .check-row { display: flex; align-items: flex-start; min-height: 44px; margin: 16px 0 0; padding: 8px 0; }
+.registration .check-row input { flex-shrink: 0; width: 20px; height: 20px; margin: 3px 0 0; accent-color: #5b50c8; }
+.registration textarea { resize: vertical; }
+.registration .field-error { min-height: 1.6em; }
+.field-feedback { margin: 8px 0; color: #5e6272; overflow-wrap: anywhere; }
+.field-feedback.is-valid { color: #245c3a; }
+.registration input.is-valid, .registration select.is-valid, .registration textarea.is-valid { border-color: #24824d; }
+.registration [aria-invalid="true"] { border-color: #9d2439; }
+.registration button:disabled { cursor: not-allowed; }
+.registration .secondary-button:disabled { color: #777; border-color: #aaa; background: #f0f0f0; }
+.inventory-note { white-space: pre-wrap; }
+.inventory-feedback.is-error { color: #9d2439; }

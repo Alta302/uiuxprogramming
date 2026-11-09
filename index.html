@@ -96,82 +96,94 @@
 
         <section id="registration" class="content-section registration" aria-labelledby="registrationTitle">
             <h2 id="registrationTitle">내 식재료 등록하기</h2>
-            <p>소비기한과 알림 시점을 정하고 내용을 확인해 보세요. 화면 시연용으로, 서버 저장이나 실제 알림 발송은 하지 않습니다. 새로고침하면 입력 내용과 보관 목록이 사라집니다.</p>
+            <p>소비기한과 알림 시점을 정하고 필요한 보관 메모를 남겨 보세요. 등록한 목록은 이 브라우저에 저장됩니다. 실제 알림은 발송되지 않습니다.</p>
             <p id="registrationProgress" class="flow-progress" role="status">1 / 5 · 시작</p>
-
-            <div class="registration-step" data-step="0">
-                <h3 tabindex="-1">먼저 소비할 식재료를 챙겨요</h3>
-                <p>식재료 하나를 입력하고 원하는 알림 시점을 선택한 뒤 등록 내용을 확인합니다.</p>
-                <button id="registrationStart" class="primary-button" type="button">식재료 등록 시작</button>
-            </div>
-
-            <div class="registration-step" data-step="1" hidden>
-                <h3 tabindex="-1">식재료와 소비기한 입력</h3>
-                <form id="foodForm" novalidate>
-                    <label for="foodName">식재료 이름 (필수)</label>
-                    <input id="foodName" name="foodName" type="text" maxlength="20" required aria-describedby="foodNameHelp foodNameError">
-                    <p id="foodNameHelp" class="field-help">예: 두부 · 앞뒤 공백을 뺀 이름을 20자 이내로 입력하세요.</p>
-                    <p id="foodNameError" class="field-error" aria-live="polite"></p>
-                    <label for="expiryDate">소비기한 (필수)</label>
-                    <input id="expiryDate" name="expiryDate" type="date" required aria-describedby="expiryDateHelp expiryDateError">
-                    <p id="expiryDateHelp" class="field-help">포장에 적힌 소비기한을 확인해 오늘 또는 이후 날짜를 선택하세요.</p>
-                    <p id="expiryDateError" class="field-error" aria-live="polite"></p>
-                    <div class="flow-actions">
-                        <button class="secondary-button" type="button" data-back="0">이전: 시작</button>
-                        <button class="primary-button" type="submit">다음: 알림 시점 선택</button>
+            <form id="registrationForm" novalidate aria-labelledby="registrationTitle" aria-busy="false">
+                <fieldset id="registrationFields" class="registration-fields">
+                    <legend class="visually-hidden">식재료 등록 정보</legend>
+                    <div class="registration-step" data-step="0">
+                        <h3 tabindex="-1">먼저 소비할 식재료를 챙겨요</h3>
+                        <p>식재료 하나를 입력하고 알림 시점과 보관 메모를 확인한 뒤 저장합니다.</p>
+                        <button id="registrationStart" class="primary-button" type="button">식재료 등록 시작</button>
                     </div>
-                </form>
-            </div>
 
-            <div class="registration-step" data-step="2" hidden>
-                <h3 tabindex="-1">알림 시점 선택</h3>
-                <form id="timingForm" novalidate>
-                    <label for="reminderTiming">언제 알림을 받고 싶나요? (필수)</label>
-                    <select id="reminderTiming" name="reminderTiming" required aria-describedby="reminderTimingHelp reminderTimingError">
-                        <option value="">알림 시점을 선택하세요</option>
-                        <option value="3">소비기한 3일 전</option>
-                        <option value="1">소비기한 1일 전</option>
-                        <option value="0">소비기한 당일</option>
-                    </select>
-                    <p id="reminderTimingHelp" class="field-help">이미 지난 날짜가 되면 더 가까운 시점이나 당일을 선택하세요.</p>
-                    <p id="reminderTimingError" class="field-error" aria-live="polite"></p>
-                    <div class="flow-actions">
-                        <button class="secondary-button" type="button" data-back="1">이전: 식재료 수정</button>
-                        <button class="primary-button" type="submit">다음: 내용 확인</button>
+                    <div class="registration-step" data-step="1" hidden>
+                        <h3 tabindex="-1">식재료와 소비기한 입력</h3>
+                        <label for="foodName">식재료 이름 (필수)</label>
+                        <input id="foodName" name="foodName" type="text" minlength="1" maxlength="20" required aria-describedby="foodNameHelp foodNameStatus foodNameError">
+                        <p id="foodNameHelp" class="field-help">예: 두부, 쌀 · 앞뒤 공백을 제외하고 1~20자로 입력하세요.</p>
+                        <p id="foodNameStatus" class="field-feedback" aria-live="polite">0 / 20자 · 식재료 이름을 입력해 주세요.</p>
+                        <p id="foodNameError" class="field-error" aria-live="polite"></p>
+                        <label for="expiryDate">소비기한 (필수)</label>
+                        <input id="expiryDate" name="expiryDate" type="date" max="9999-12-31" required aria-describedby="expiryDateHelp expiryDateError">
+                        <p id="expiryDateHelp" class="field-help">포장에 적힌 소비기한을 확인해 오늘 또는 이후 날짜를 선택하세요.</p>
+                        <p id="expiryDateError" class="field-error" aria-live="polite"></p>
+                        <div class="flow-actions">
+                            <button class="secondary-button" type="button" data-back="0">이전: 시작</button>
+                            <button id="foodNext" class="primary-button" type="button">다음: 알림과 메모</button>
+                        </div>
                     </div>
-                </form>
-            </div>
 
-            <div class="registration-step" data-step="3" hidden>
-                <h3 tabindex="-1">등록 내용 확인</h3>
-                <p>입력한 내용이 맞나요? 수정하려면 이전 버튼을 눌러 주세요.</p>
-                <dl id="registrationSummary" class="flow-summary"></dl>
-                <div class="flow-actions">
-                    <button class="secondary-button" type="button" data-back="2">이전: 알림 시점 수정</button>
-                    <button id="registrationComplete" class="primary-button" type="button">확인한 내용으로 등록 시연 완료</button>
-                </div>
-            </div>
+                    <div class="registration-step" data-step="2" hidden>
+                        <h3 tabindex="-1">알림 시점과 보관 메모</h3>
+                        <label for="reminderTiming">언제 알림을 받고 싶나요? (필수)</label>
+                        <select id="reminderTiming" name="reminderTiming" required aria-describedby="reminderTimingHelp reminderTimingError">
+                            <option value="">알림 시점을 선택하세요</option>
+                            <option value="3">소비기한 3일 전</option>
+                            <option value="1">소비기한 1일 전</option>
+                            <option value="0">소비기한 당일</option>
+                        </select>
+                        <p id="reminderTimingHelp" class="field-help">이미 지난 날짜가 되면 더 가까운 시점이나 당일을 선택하세요.</p>
+                        <p id="reminderTimingError" class="field-error" aria-live="polite"></p>
+                        <label class="check-row" for="addMemo">
+                            <input id="addMemo" name="addMemo" type="checkbox" aria-controls="memoFields" aria-expanded="false" aria-describedby="addMemoHelp"> 보관 메모 남기기
+                        </label>
+                        <p id="addMemoHelp" class="field-help">선택하면 보관 위치나 먼저 먹을 이유를 적을 수 있습니다.</p>
+                        <div id="memoFields" hidden>
+                            <label for="storageMemo">보관 메모 (메모를 남길 때 필수)</label>
+                            <textarea id="storageMemo" name="storageMemo" rows="3" minlength="2" maxlength="80" disabled aria-describedby="storageMemoHelp storageMemoStatus storageMemoError"></textarea>
+                            <p id="storageMemoHelp" class="field-help">예: 냉장실 맨 위 칸 · 앞뒤 공백을 제외하고 2~80자로 입력하세요.</p>
+                            <p id="storageMemoStatus" class="field-feedback" aria-live="polite">0 / 80자 · 메모를 2자 이상 입력해 주세요.</p>
+                            <p id="storageMemoError" class="field-error" aria-live="polite"></p>
+                        </div>
+                        <div class="flow-actions">
+                            <button class="secondary-button" type="button" data-back="1">이전: 식재료 수정</button>
+                            <button id="timingNext" class="primary-button" type="button">다음: 내용 확인</button>
+                        </div>
+                    </div>
 
-            <div class="registration-step" data-step="4" hidden>
-                <h3 tabindex="-1">식재료 등록 시연이 완료되었습니다</h3>
-                <p>아래 내용을 보관 목록에 담아 소비 여부를 관리해 보세요. 서버 저장이나 실제 알림 예약은 되지 않습니다.</p>
-                <dl id="registrationResult" class="flow-summary"></dl>
-                <button id="addToInventory" class="primary-button" type="button">보관 목록에 담기</button>
-                <p id="inventoryAddMessage" class="field-help" role="status"></p>
-                <p>다른 식재료를 등록하려면 ‘다시 시작’을 눌러 주세요. 이미 보관 목록에 담은 식재료는 유지됩니다.</p>
-            </div>
-            <button id="registrationRestart" class="secondary-button flow-restart" type="button" hidden>다시 시작 (입력 내용 지우기)</button>
+                    <div class="registration-step" data-step="3" hidden>
+                        <h3 tabindex="-1">등록 내용 확인</h3>
+                        <p>입력한 내용이 맞나요? 수정하려면 이전 버튼을 눌러 주세요.</p>
+                        <dl id="registrationSummary" class="flow-summary"></dl>
+                        <div class="flow-actions">
+                            <button class="secondary-button" type="button" data-back="2">이전: 알림과 메모 수정</button>
+                            <button id="registrationComplete" class="primary-button" type="submit">확인한 내용으로 저장하기</button>
+                        </div>
+                    </div>
+
+                    <div class="registration-step" data-step="4" hidden>
+                        <h3 tabindex="-1">식재료 등록이 완료되었습니다</h3>
+                        <p>보관 목록에 저장했습니다. 목록에서 소비 완료·되돌리기를 할 수 있습니다.</p>
+                        <dl id="registrationResult" class="flow-summary"></dl>
+                        <button id="viewInventory" class="primary-button" type="button">보관 목록 확인하기</button>
+                        <p>다른 식재료를 등록하려면 ‘다시 시작’을 눌러 주세요. 이미 저장한 식재료는 유지됩니다.</p>
+                    </div>
+                    <button id="registrationRestart" class="secondary-button flow-restart" type="button" hidden>다시 시작 (입력 내용 지우기)</button>
+                </fieldset>
+            </form>
+            <p id="registrationStatus" class="subscribe-message" role="status" hidden></p>
         </section>
 
         <section id="inventory" class="content-section inventory" aria-labelledby="inventoryTitle">
             <h2 id="inventoryTitle">내 식재료 보관 목록</h2>
             <p>소비기한이 가까운 재료부터 확인하고 먹은 재료는 ‘소비 완료’를 눌러 주세요. 잘못 눌렀다면 보관 목록으로 되돌릴 수 있습니다.</p>
-            <p class="field-help">현재 화면에서만 관리됩니다. 새로고침하면 목록이 초기화되며, 실제 알림은 발송되지 않습니다.</p>
+            <p class="field-help">이 브라우저에 목록과 소비 상태가 저장되어 새로고침해도 유지됩니다. 실제 알림은 발송되지 않습니다.</p>
             <p id="inventoryCount" class="flow-progress">보관 중 0개 · 소비 완료 0개</p>
             <p id="inventoryFeedback" class="inventory-feedback" role="status"></p>
             <div class="inventory-group">
                 <h3>보관 중</h3>
-                <p id="storedEmpty">아직 담은 식재료가 없습니다. 식재료 등록을 완료한 뒤 ‘보관 목록에 담기’를 눌러 주세요.</p>
+                <p id="storedEmpty">아직 저장한 식재료가 없습니다. 식재료를 입력하고 확인 화면에서 저장해 주세요.</p>
                 <ul id="storedFoodList" class="inventory-list" aria-label="보관 중인 식재료"></ul>
             </div>
             <div class="inventory-group">
