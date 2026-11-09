@@ -161,19 +161,31 @@ tabs.forEach(function (tab) {
     tab.addEventListener("keydown", handleTabKeydown);
 });
 
+const registrationForm = document.querySelector('#registrationForm');
+const registrationFields = document.querySelector('#registrationFields');
 const registrationSteps = document.querySelectorAll('.registration-step');
 const registrationProgress = document.querySelector('#registrationProgress');
 const registrationRestart = document.querySelector('#registrationRestart');
-const foodForm = document.querySelector('#foodForm');
-const timingForm = document.querySelector('#timingForm');
+const registrationComplete = document.querySelector('#registrationComplete');
+const registrationStatus = document.querySelector('#registrationStatus');
 const foodName = document.querySelector('#foodName');
 const expiryDate = document.querySelector('#expiryDate');
 const reminderTiming = document.querySelector('#reminderTiming');
+const addMemo = document.querySelector('#addMemo');
+const storageMemo = document.querySelector('#storageMemo');
 const registrationSummary = document.querySelector('#registrationSummary');
 const registrationResult = document.querySelector('#registrationResult');
-const registrationLabels = ['시작', '식재료 입력', '알림 선택', '내용 확인', '완료'];
+const registrationLabels = ['시작', '식재료 입력', '알림과 메모', '내용 확인', '완료'];
 let registrationStep = 0;
-let pendingInventoryItem = null;
+let isSubmitting = false;
+let lastSavedId = null;
+
+const inventoryStorageKey = 'freshnote.inventory.v1';
+let inventoryItems = [];
+const inventory = document.querySelector('#inventory');
+const storedFoodList = document.querySelector('#storedFoodList');
+const consumedFoodList = document.querySelector('#consumedFoodList');
+const inventoryFeedback = document.querySelector('#inventoryFeedback');
 
 function todayString() {
     const now = new Date();
@@ -181,70 +193,123 @@ function todayString() {
 }
 
 function reminderDateString() {
-    const [year, month, day] = expiryDate.value.split('-').map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day));
+    const date = new Date(`${expiryDate.value}T00:00:00Z`);
     date.setUTCDate(date.getUTCDate() - Number(reminderTiming.value));
     return date.toISOString().slice(0, 10);
 }
 
 function showRegistrationStep(step) {
+    if (isSubmitting) return;
     registrationStep = step;
     registrationSteps.forEach(function (panel) {
         panel.hidden = Number(panel.dataset.step) !== step;
     });
     registrationProgress.textContent = `${step + 1} / 5 · ${registrationLabels[step]}`;
     registrationRestart.hidden = step === 0;
-    const heading = document.querySelector(`.registration-step[data-step="${step}"] h3`);
-    heading.focus();
+    document.querySelector(`.registration-step[data-step="${step}"] h3`).focus();
 }
 
 function setRegistrationError(field, message) {
     document.querySelector(`#${field.id}Error`).textContent = message;
     if (message) {
         field.setAttribute('aria-invalid', 'true');
+        field.classList.remove('is-valid');
     } else {
         field.removeAttribute('aria-invalid');
     }
 }
 
-function validateFood() {
-    expiryDate.min = todayString();
-    const nameError = !foodName.value.trim()
-        ? '식재료 이름을 입력해 주세요. 예: 두부'
-        : foodName.value.trim().length > 20 ? '식재료 이름을 20자 이내로 줄여 주세요.' : '';
-    const dateError = !expiryDate.value || !expiryDate.validity.valid
-        ? '소비기한을 오늘 또는 이후의 올바른 날짜로 선택해 주세요.' : '';
-    setRegistrationError(foodName, nameError);
-    setRegistrationError(expiryDate, dateError);
-    const invalidField = nameError ? foodName : dateError ? expiryDate : null;
-    if (invalidField) {
-        if (registrationStep !== 1) showRegistrationStep(1);
-        invalidField.focus();
+function getRegistrationError(field) {
+    const value = field.value.trim();
+    if (field === foodName) {
+        if (!value) return '식재료 이름을 입력해 주세요. 예: 두부, 쌀';
+        if (value.length > 20) return '식재료 이름을 20자 이내로 줄여 주세요.';
+    } else if (field === expiryDate) {
+        expiryDate.min = todayString();
+        if (!value) return '포장에 적힌 소비기한을 선택해 주세요.';
+        if (!field.validity.valid) return '소비기한을 오늘 또는 이후의 올바른 날짜로 선택해 주세요.';
+    } else if (field === reminderTiming) {
+        if (!['3', '1', '0'].includes(value)) return '3일 전, 1일 전, 당일 중 알림 시점을 선택해 주세요.';
+        if (!getRegistrationError(expiryDate) && reminderDateString() < todayString()) {
+            return '알림 날짜가 이미 지났습니다. 더 가까운 시점이나 소비기한 당일로 바꿔 주세요.';
+        }
+    } else if (field === storageMemo && !field.disabled) {
+        if (!value) return '보관 메모를 입력하거나 ‘보관 메모 남기기’를 해제해 주세요.';
+        if (value.length < 2) return '보관 위치나 주의할 점을 2자 이상 입력해 주세요.';
+        if (value.length > 80) return '보관 메모를 80자 이내로 줄여 주세요.';
     }
-    return !invalidField;
+    return '';
+}
+
+function updateFieldFeedback(field) {
+    const error = getRegistrationError(field);
+    const valid = !field.disabled && !!field.value.trim() && !error;
+    field.classList.toggle('is-valid', valid);
+    if (field.hasAttribute('aria-invalid')) setRegistrationError(field, error);
+    if (field === foodName || field === storageMemo) {
+        const limit = field === foodName ? 20 : 80;
+        const hint = field === foodName ? '식재료 이름을 입력해 주세요.' : '메모를 2자 이상 입력해 주세요.';
+        const status = document.querySelector(`#${field.id}Status`);
+        status.textContent = `${field.value.length} / ${limit}자 · ${valid ? '입력 조건을 충족했습니다.' : hint}`;
+        status.classList.toggle('is-valid', valid);
+    }
+}
+
+function syncMemoField() {
+    document.querySelector('#memoFields').hidden = !addMemo.checked;
+    addMemo.setAttribute('aria-expanded', String(addMemo.checked));
+    storageMemo.disabled = !addMemo.checked;
+    storageMemo.required = addMemo.checked;
+    setRegistrationError(storageMemo, '');
+    updateFieldFeedback(storageMemo);
+}
+
+function validateFields(fields, step) {
+    const errors = fields.map(function (field) {
+        const message = getRegistrationError(field);
+        setRegistrationError(field, message);
+        updateFieldFeedback(field);
+        return { field, message };
+    });
+    const firstError = errors.find(function (entry) { return entry.message; });
+    if (firstError) {
+        if (registrationStep !== step) showRegistrationStep(step);
+        firstError.field.focus();
+        return false;
+    }
+    return true;
+}
+
+function validateFood() {
+    return validateFields([foodName, expiryDate], 1);
 }
 
 function validateTiming() {
-    let message = '';
-    if (!['3', '1', '0'].includes(reminderTiming.value)) {
-        message = '알림 시점을 선택해 주세요. 3일 전, 1일 전, 당일 중 고를 수 있습니다.';
-    } else if (reminderDateString() < todayString()) {
-        message = '선택한 알림 날짜가 이미 지났습니다. 더 가까운 시점이나 소비기한 당일로 바꿔 주세요.';
-    }
-    setRegistrationError(reminderTiming, message);
-    if (message) {
-        if (registrationStep !== 2) showRegistrationStep(2);
-        reminderTiming.focus();
-    }
-    return !message;
+    return validateFields([reminderTiming, storageMemo], 2);
 }
 
-function renderRegistrationSummary(target) {
+function validateRegistration() {
+    return validateFood() && validateTiming();
+}
+
+function collectRegistration() {
+    const data = new FormData(registrationForm);
+    return {
+        name: data.get('foodName').trim(),
+        expiryDate: data.get('expiryDate'),
+        timingLabel: reminderTiming.selectedOptions[0].textContent,
+        reminderDate: reminderDateString(),
+        memo: (data.get('storageMemo') || '').trim()
+    };
+}
+
+function renderRegistrationSummary(target, data) {
     const values = [
-        ['식재료', foodName.value.trim()],
-        ['소비기한', expiryDate.value],
-        ['알림 시점', reminderTiming.selectedOptions[0].textContent],
-        ['알림 예정일 (시연)', reminderDateString()]
+        ['식재료', data.name],
+        ['소비기한', data.expiryDate],
+        ['알림 시점', data.timingLabel],
+        ['알림 예정일 (시연)', data.reminderDate],
+        ['보관 메모', data.memo || '메모 없음']
     ];
     target.replaceChildren();
     values.forEach(function ([label, value]) {
@@ -256,79 +321,130 @@ function renderRegistrationSummary(target) {
     });
 }
 
-function validateRegistration() {
-    if (!validateFood()) return false;
-    return validateTiming();
+function setSubmissionState(state, message = '') {
+    isSubmitting = state === 'loading';
+    registrationForm.setAttribute('aria-busy', String(isSubmitting));
+    registrationFields.disabled = isSubmitting;
+    registrationComplete.disabled = isSubmitting || state === 'success';
+    registrationComplete.textContent = isSubmitting ? '저장 중…'
+        : state === 'error' ? '다시 저장하기' : '확인한 내용으로 저장하기';
+    registrationStatus.hidden = state === 'idle';
+    registrationStatus.classList.toggle('is-error', state === 'error');
+    registrationStatus.classList.toggle('is-success', state === 'success');
+    registrationStatus.textContent = isSubmitting ? '식재료를 저장하고 있습니다. 잠시 기다려 주세요.'
+        : state === 'success' ? '저장했습니다. 보관 목록에서 식재료를 확인해 보세요.' : message;
 }
 
+function goToTiming() {
+    if (isSubmitting || registrationStep !== 1 || !validateFood()) return;
+    showRegistrationStep(2);
+}
+
+function goToReview() {
+    if (isSubmitting || registrationStep !== 2 || !validateRegistration()) return;
+    renderRegistrationSummary(registrationSummary, collectRegistration());
+    showRegistrationStep(3);
+}
+
+function readStoredInventory() {
+    const raw = localStorage.getItem(inventoryStorageKey);
+    const items = raw === null ? [] : JSON.parse(raw);
+    const valid = Array.isArray(items) && items.every(function (item) {
+        return item && Number.isSafeInteger(item.id) && item.id > 0
+            && typeof item.name === 'string' && item.name.trim().length > 0
+            && typeof item.expiryDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.expiryDate)
+            && typeof item.timingLabel === 'string' && typeof item.reminderDate === 'string'
+            && typeof item.memo === 'string' && typeof item.consumed === 'boolean';
+    });
+    if (!valid || new Set(items.map(function (item) { return item.id; })).size !== items.length) {
+        throw new SyntaxError('Invalid inventory data');
+    }
+    return items;
+}
+
+function saveInventory(items) {
+    localStorage.setItem(inventoryStorageKey, JSON.stringify(items));
+    inventoryItems = items;
+    renderInventory();
+}
+
+function storageFailureMessage(error) {
+    if (error instanceof SyntaxError) {
+        return '기존 보관 목록을 읽지 못했습니다. 입력 내용은 유지됩니다. 브라우저의 이 사이트 저장 데이터를 확인한 뒤 다시 시도해 주세요.';
+    }
+    return '브라우저에 저장하지 못했습니다. 입력 내용은 유지됩니다. 저장 허용 설정이나 남은 저장 공간을 확인한 뒤 다시 시도해 주세요.';
+}
+
+async function handleRegistrationSubmit(event) {
+    event.preventDefault();
+    if (isSubmitting) return;
+    if (registrationStep === 1) return goToTiming();
+    if (registrationStep === 2) return goToReview();
+    if (registrationStep !== 3 || !validateRegistration()) return;
+    const data = collectRegistration();
+    setSubmissionState('loading');
+    try {
+        await new Promise(function (resolve) { setTimeout(resolve, 450); });
+        const items = readStoredInventory();
+        const id = items.reduce(function (max, item) { return Math.max(max, item.id); }, 0) + 1;
+        const item = { ...data, id, consumed: false };
+        saveInventory([...items, item]);
+        lastSavedId = id;
+        renderRegistrationSummary(registrationResult, data);
+        setSubmissionState('success');
+        showRegistrationStep(4);
+        inventoryFeedback.classList.remove('is-error');
+        inventoryFeedback.textContent = `보관 목록에 ‘${data.name}’ 항목을 저장했습니다.`;
+    } catch (error) {
+        setSubmissionState('error', storageFailureMessage(error));
+    }
+}
+
+registrationForm.addEventListener('submit', handleRegistrationSubmit);
+document.querySelector('#foodNext').addEventListener('click', goToTiming);
+document.querySelector('#timingNext').addEventListener('click', goToReview);
+
 document.querySelector('#registrationStart').addEventListener('click', function () {
+    if (isSubmitting) return;
     expiryDate.min = todayString();
+    setSubmissionState('idle');
     showRegistrationStep(1);
 });
 
-foodForm.addEventListener('submit', function (event) {
-    event.preventDefault();
-    if (registrationStep !== 1 || !validateFood()) return;
-    showRegistrationStep(2);
-});
-
-timingForm.addEventListener('submit', function (event) {
-    event.preventDefault();
-    if (registrationStep !== 2 || !validateRegistration()) return;
-    renderRegistrationSummary(registrationSummary);
-    showRegistrationStep(3);
-});
-
-document.querySelectorAll('[data-back]').forEach(function (button) {
+document.querySelectorAll('#registration [data-back]').forEach(function (button) {
     button.addEventListener('click', function () {
+        if (isSubmitting) return;
+        setSubmissionState('idle');
         showRegistrationStep(Number(button.dataset.back));
     });
 });
 
-[foodName, expiryDate, reminderTiming].forEach(function (field) {
+[foodName, expiryDate, reminderTiming, storageMemo].forEach(function (field) {
     field.addEventListener(field === reminderTiming ? 'change' : 'input', function () {
-        setRegistrationError(field, '');
+        updateFieldFeedback(field);
+        if (field === expiryDate) updateFieldFeedback(reminderTiming);
     });
 });
-
-document.querySelector('#registrationComplete').addEventListener('click', function () {
-    if (registrationStep !== 3 || !validateRegistration()) return;
-    renderRegistrationSummary(registrationResult);
-    pendingInventoryItem = {
-        name: foodName.value.trim(),
-        expiryDate: expiryDate.value,
-        timingLabel: reminderTiming.selectedOptions[0].textContent,
-        reminderDate: reminderDateString()
-    };
-    document.querySelector('#addToInventory').disabled = false;
-    document.querySelector('#inventoryAddMessage').textContent = '';
-    showRegistrationStep(4);
-});
+addMemo.addEventListener('change', syncMemoField);
 
 registrationRestart.addEventListener('click', function () {
-    pendingInventoryItem = null;
-    document.querySelector('#addToInventory').disabled = false;
-    document.querySelector('#inventoryAddMessage').textContent = '';
-    foodForm.reset();
-    timingForm.reset();
-    [foodName, expiryDate, reminderTiming].forEach(function (field) {
+    if (isSubmitting) return;
+    registrationForm.reset();
+    lastSavedId = null;
+    [foodName, expiryDate, reminderTiming, storageMemo].forEach(function (field) {
         setRegistrationError(field, '');
+        updateFieldFeedback(field);
     });
+    syncMemoField();
     registrationSummary.replaceChildren();
     registrationResult.replaceChildren();
-    expiryDate.min = todayString();
+    setSubmissionState('idle');
     showRegistrationStep(0);
 });
 
-expiryDate.min = todayString();
-
-const inventoryItems = [];
-let nextInventoryId = 1;
-const inventory = document.querySelector('#inventory');
-const storedFoodList = document.querySelector('#storedFoodList');
-const consumedFoodList = document.querySelector('#consumedFoodList');
-const inventoryFeedback = document.querySelector('#inventoryFeedback');
-const addToInventory = document.querySelector('#addToInventory');
+document.querySelector('#viewInventory').addEventListener('click', function () {
+    focusInventoryItem(lastSavedId);
+});
 
 function expiryStatus(dateString) {
     const days = Math.round((Date.parse(dateString) - Date.parse(todayString())) / 86400000);
@@ -350,7 +466,14 @@ function createInventoryCard(item) {
     const status = document.createElement('span');
     status.className = 'inventory-status';
     status.textContent = item.consumed ? '소비 완료' : expiryStatus(item.expiryDate);
-    details.append(name, expiry, timing, status);
+    details.append(name, expiry, timing);
+    if (item.memo) {
+        const memo = document.createElement('p');
+        memo.className = 'inventory-note';
+        memo.textContent = `보관 메모: ${item.memo}`;
+        details.append(memo);
+    }
+    details.append(status);
     const button = document.createElement('button');
     button.type = 'button';
     button.className = item.consumed ? 'secondary-button' : 'primary-button';
@@ -379,44 +502,54 @@ function renderInventory() {
     storedEmpty.hidden = storedCount > 0;
     storedEmpty.textContent = consumedCount > 0
         ? '보관 중인 식재료를 모두 소비했습니다. 새 식재료를 등록하거나 소비 완료 목록에서 되돌릴 수 있습니다.'
-        : '아직 담은 식재료가 없습니다. 식재료 등록을 완료한 뒤 ‘보관 목록에 담기’를 눌러 주세요.';
+        : '아직 저장한 식재료가 없습니다. 식재료를 입력하고 확인 화면에서 저장해 주세요.';
     document.querySelector('#consumedEmpty').hidden = consumedCount > 0;
 }
 
 function focusInventoryItem(id) {
-    inventory.querySelector(`button[data-food-id="${id}"]`).focus();
+    const button = inventory.querySelector(`button[data-food-id="${id}"]`);
+    (button || inventory.querySelector('.inventory-register-link')).focus();
 }
-
-addToInventory.addEventListener('click', function () {
-    if (registrationStep !== 4 || !pendingInventoryItem) return;
-    const item = { ...pendingInventoryItem, id: nextInventoryId++, consumed: false };
-    inventoryItems.push(item);
-    pendingInventoryItem = null;
-    addToInventory.disabled = true;
-    document.querySelector('#inventoryAddMessage').textContent = '보관 목록에 담았습니다. 목록에서 소비 여부를 관리해 보세요.';
-    renderInventory();
-    inventoryFeedback.textContent = `보관 목록에 ‘${item.name}’ 항목을 담았습니다. 먹은 뒤 ‘소비 완료’를 눌러 주세요.`;
-    focusInventoryItem(item.id);
-});
 
 inventory.addEventListener('click', function (event) {
     const button = event.target.closest('button[data-food-id]');
     if (!button) return;
-    const item = inventoryItems.find(function (food) {
-        return food.id === Number(button.dataset.foodId);
-    });
-    if (!item) return;
-    if (button.dataset.action === 'consume' && !item.consumed) {
-        item.consumed = true;
-        inventoryFeedback.textContent = `‘${item.name}’ 항목을 소비 완료로 변경했습니다. 잘못 눌렀다면 보관 목록으로 되돌릴 수 있습니다.`;
-    } else if (button.dataset.action === 'restore' && item.consumed) {
-        item.consumed = false;
-        inventoryFeedback.textContent = `‘${item.name}’ 항목을 보관 목록으로 되돌렸습니다.`;
-    } else {
-        return;
+    const id = Number(button.dataset.foodId);
+    try {
+        const items = readStoredInventory();
+        const item = items.find(function (food) { return food.id === id; });
+        if (!item) {
+            inventoryItems = items;
+            renderInventory();
+            inventoryFeedback.textContent = '해당 식재료가 목록에 없습니다. 목록을 확인하거나 새 식재료를 등록해 주세요.';
+        } else {
+            const consumed = button.dataset.action === 'consume';
+            const updated = items.map(function (food) {
+                return food.id === id ? { ...food, consumed } : food;
+            });
+            saveInventory(updated);
+            inventoryFeedback.textContent = consumed
+                ? `‘${item.name}’ 항목을 소비 완료로 변경했습니다. 잘못 눌렀다면 보관 목록으로 되돌릴 수 있습니다.`
+                : `‘${item.name}’ 항목을 보관 목록으로 되돌렸습니다.`;
+        }
+        inventoryFeedback.classList.remove('is-error');
+        focusInventoryItem(id);
+    } catch (error) {
+        inventoryFeedback.classList.add('is-error');
+        inventoryFeedback.textContent = '소비 상태를 저장하지 못했습니다. 기존 상태는 유지됩니다. 저장 설정과 남은 공간을 확인한 뒤 다시 눌러 주세요.';
     }
-    renderInventory();
-    focusInventoryItem(item.id);
 });
 
-renderInventory();
+expiryDate.min = todayString();
+updateFieldFeedback(foodName);
+syncMemoField();
+try {
+    inventoryItems = readStoredInventory();
+    renderInventory();
+} catch (error) {
+    document.querySelector('#inventoryCount').textContent = '목록을 불러오지 못했습니다.';
+    document.querySelector('#storedEmpty').hidden = true;
+    document.querySelector('#consumedEmpty').hidden = true;
+    inventoryFeedback.classList.add('is-error');
+    inventoryFeedback.textContent = storageFailureMessage(error);
+}
