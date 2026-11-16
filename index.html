@@ -20,12 +20,16 @@
         <h1>신선노트</h1>
         <p class="header-description">냉장고 속 식재료의 소비기한을 놓치지 않도록 미리 챙겨주는 스마트 알림 서비스</p>
         <nav class="site-nav" aria-label="주요 메뉴">
-            <a href="#about">서비스 소개</a>
-            <a href="#features">주요 기능</a>
-            <a href="#steps">이용 방법</a>
-            <a href="#registration">식재료 등록</a>
-            <a href="#inventory">보관 목록</a>
-            <a href="#subscribe">알림 신청</a>
+            <button id="menuToggle" class="secondary-button menu-toggle" type="button" aria-controls="mainMenu" aria-expanded="true" hidden>메뉴 닫기</button>
+            <ul id="mainMenu" class="menu-list">
+                <li><a class="is-current" href="#about" aria-current="location">서비스 소개</a></li>
+                <li><a href="#features">주요 기능</a></li>
+                <li><a href="#steps">이용 방법</a></li>
+                <li><a href="#reminder-preview">알림 미리보기</a></li>
+                <li><a href="#registration">식재료 등록</a></li>
+                <li><a href="#inventory">보관 목록</a></li>
+                <li><a href="#subscribe">알림 신청</a></li>
+            </ul>
         </nav>
     </header>
 
@@ -179,16 +183,22 @@
             <h2 id="inventoryTitle">내 식재료 보관 목록</h2>
             <p>소비기한이 가까운 재료부터 확인하고 먹은 재료는 ‘소비 완료’를 눌러 주세요. 잘못 눌렀다면 보관 목록으로 되돌릴 수 있습니다.</p>
             <p class="field-help">이 브라우저에 목록과 소비 상태가 저장되어 새로고침해도 유지됩니다. 실제 알림은 발송되지 않습니다.</p>
-            <p id="inventoryCount" class="flow-progress">보관 중 0개 · 소비 완료 0개</p>
+            <div class="inventory-filters" role="group" aria-label="식재료 표시 조건" aria-describedby="inventoryFilterHelp">
+                <button class="filter-button is-active" type="button" data-filter="all" aria-pressed="true">전체</button>
+                <button class="filter-button" type="button" data-filter="stored" aria-pressed="false">보관 중</button>
+                <button class="filter-button" type="button" data-filter="soon" aria-pressed="false">소비 임박</button>
+                <button class="filter-button" type="button" data-filter="consumed" aria-pressed="false">소비 완료</button>
+            </div>
+            <p id="inventoryFilterHelp" class="field-help">소비 임박: 보관 중인 식재료 중 소비기한이 오늘부터 3일 이내인 항목입니다. 기한이 지난 재료는 전체·보관 중에서 확인하세요.</p>
+            <p id="inventoryCount" class="flow-progress" role="status" aria-atomic="true">전체 0개 중 ‘전체’ 0개 표시</p>
             <p id="inventoryFeedback" class="inventory-feedback" role="status"></p>
-            <div class="inventory-group">
+            <p id="inventoryEmpty" class="inventory-empty">아직 저장한 식재료가 없습니다. 식재료를 등록하면 이곳에서 확인할 수 있습니다.</p>
+            <div id="storedGroup" class="inventory-group" hidden>
                 <h3>보관 중</h3>
-                <p id="storedEmpty">아직 저장한 식재료가 없습니다. 식재료를 입력하고 확인 화면에서 저장해 주세요.</p>
                 <ul id="storedFoodList" class="inventory-list" aria-label="보관 중인 식재료"></ul>
             </div>
-            <div class="inventory-group">
+            <div id="consumedGroup" class="inventory-group" hidden>
                 <h3>소비 완료</h3>
-                <p id="consumedEmpty">아직 소비 완료한 식재료가 없습니다. 보관 중인 재료를 먹었다면 ‘소비 완료’를 눌러 주세요.</p>
                 <ul id="consumedFoodList" class="inventory-list" aria-label="소비 완료한 식재료"></ul>
             </div>
             <a class="inventory-register-link" href="#registration">식재료 등록 화면으로 이동</a>

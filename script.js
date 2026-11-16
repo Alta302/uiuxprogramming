@@ -1,3 +1,73 @@
+// 10주차: 주소의 목적지와 현재 메뉴, 모바일 메뉴 상태를 동기화합니다.
+const menuToggle = document.querySelector('#menuToggle');
+const mainMenu = document.querySelector('#mainMenu');
+const navLinks = document.querySelectorAll('#mainMenu a');
+const mobileMenuQuery = window.matchMedia('(max-width: 768px)');
+
+function setMenuOpen(open) {
+    const isOpen = !mobileMenuQuery.matches || open;
+    mainMenu.hidden = !isOpen;
+    menuToggle.textContent = isOpen ? '메뉴 닫기' : '메뉴 열기';
+    menuToggle.setAttribute('aria-expanded', String(isOpen));
+}
+
+function syncMenuLayout() {
+    const focused = document.activeElement;
+    menuToggle.hidden = !mobileMenuQuery.matches;
+    setMenuOpen(false);
+    if (mobileMenuQuery.matches && mainMenu.contains(focused)) {
+        menuToggle.focus();
+    } else if (!mobileMenuQuery.matches && focused === menuToggle) {
+        mainMenu.querySelector('[aria-current]').focus();
+    }
+}
+
+function updateCurrentNav() {
+    const currentLink = Array.from(navLinks).find(function (link) {
+        return link.hash === window.location.hash;
+    }) || navLinks[0];
+    navLinks.forEach(function (link) {
+        const isCurrent = link === currentLink;
+        link.classList.toggle('is-current', isCurrent);
+        if (isCurrent) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+    });
+}
+
+menuToggle.addEventListener('click', function () {
+    setMenuOpen(mainMenu.hidden);
+});
+document.querySelector('.site-nav').addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && mobileMenuQuery.matches && !mainMenu.hidden) {
+        setMenuOpen(false);
+        menuToggle.focus();
+    }
+});
+
+// 본문 안의 이동 링크도 같은 목적지와 초점 이동을 사용합니다.
+document.querySelectorAll('a[href^="#"]').forEach(function (link) {
+    link.addEventListener('click', function (event) {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        const target = document.getElementById(link.hash.slice(1));
+        if (!target) return;
+        setMenuOpen(false);
+        const heading = target.querySelector('h2');
+        heading.tabIndex = -1;
+        heading.focus({ preventScroll: true });
+    });
+});
+window.addEventListener('hashchange', function () {
+    updateCurrentNav();
+    setMenuOpen(false);
+});
+window.addEventListener('pageshow', function () {
+    updateCurrentNav();
+    syncMenuLayout();
+});
+mobileMenuQuery.addEventListener('change', syncMenuLayout);
+updateCurrentNav();
+syncMenuLayout();
+
 const subscribeForm = document.querySelector("#subscribe-form");
 const emailInput = document.querySelector("#email");
 const subscribeButton = document.querySelector("#subscribeButton");
@@ -186,6 +256,9 @@ const inventory = document.querySelector('#inventory');
 const storedFoodList = document.querySelector('#storedFoodList');
 const consumedFoodList = document.querySelector('#consumedFoodList');
 const inventoryFeedback = document.querySelector('#inventoryFeedback');
+const filterButtons = document.querySelectorAll('.filter-button');
+const inventoryEmpty = document.querySelector('#inventoryEmpty');
+let currentFilter = 'all';
 
 function todayString() {
     const now = new Date();
@@ -443,6 +516,9 @@ registrationRestart.addEventListener('click', function () {
 });
 
 document.querySelector('#viewInventory').addEventListener('click', function () {
+    // 앞서 선택한 필터 때문에 방금 등록한 식재료가 가려지지 않도록 합니다.
+    setInventoryFilter('all');
+    window.location.hash = 'inventory';
     focusInventoryItem(lastSavedId);
 });
 
@@ -485,10 +561,39 @@ function createInventoryCard(item) {
     return card;
 }
 
+function getVisibleInventory() {
+    return inventoryItems.filter(function (item) {
+        if (currentFilter === 'stored') return !item.consumed;
+        if (currentFilter === 'consumed') return item.consumed;
+        if (currentFilter === 'soon') {
+            const days = Math.round((Date.parse(item.expiryDate) - Date.parse(todayString())) / 86400000);
+            return !item.consumed && days >= 0 && days <= 3;
+        }
+        return true;
+    });
+}
+
+function setInventoryFilter(filter) {
+    currentFilter = filter;
+    renderInventory();
+}
+
+filterButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+        setInventoryFilter(button.dataset.filter);
+    });
+});
+
 function renderInventory() {
+    filterButtons.forEach(function (button) {
+        const isSelected = button.dataset.filter === currentFilter;
+        button.classList.toggle('is-active', isSelected);
+        button.setAttribute('aria-pressed', String(isSelected));
+        button.disabled = false;
+    });
     storedFoodList.replaceChildren();
     consumedFoodList.replaceChildren();
-    const sorted = inventoryItems.slice().sort(function (a, b) {
+    const sorted = getVisibleInventory().sort(function (a, b) {
         return a.expiryDate.localeCompare(b.expiryDate) || a.id - b.id;
     });
     sorted.forEach(function (item) {
@@ -497,18 +602,19 @@ function renderInventory() {
     });
     const storedCount = storedFoodList.children.length;
     const consumedCount = consumedFoodList.children.length;
-    document.querySelector('#inventoryCount').textContent = `보관 중 ${storedCount}개 · 소비 완료 ${consumedCount}개`;
-    const storedEmpty = document.querySelector('#storedEmpty');
-    storedEmpty.hidden = storedCount > 0;
-    storedEmpty.textContent = consumedCount > 0
-        ? '보관 중인 식재료를 모두 소비했습니다. 새 식재료를 등록하거나 소비 완료 목록에서 되돌릴 수 있습니다.'
-        : '아직 저장한 식재료가 없습니다. 식재료를 입력하고 확인 화면에서 저장해 주세요.';
-    document.querySelector('#consumedEmpty').hidden = consumedCount > 0;
+    const filterLabel = document.querySelector('.filter-button[aria-pressed="true"]').textContent;
+    document.querySelector('#inventoryCount').textContent = `전체 ${inventoryItems.length}개 중 ‘${filterLabel}’ ${sorted.length}개 표시 · 보관 중 ${storedCount}개 · 소비 완료 ${consumedCount}개`;
+    document.querySelector('#storedGroup').hidden = storedCount === 0;
+    document.querySelector('#consumedGroup').hidden = consumedCount === 0;
+    inventoryEmpty.hidden = sorted.length > 0;
+    inventoryEmpty.textContent = inventoryItems.length === 0
+        ? '아직 저장한 식재료가 없습니다. 식재료를 등록하면 이곳에서 확인할 수 있습니다.'
+        : `‘${filterLabel}’ 조건에 맞는 식재료가 없습니다. ‘전체’ 또는 다른 조건을 선택해 보세요.`;
 }
 
 function focusInventoryItem(id) {
     const button = inventory.querySelector(`button[data-food-id="${id}"]`);
-    (button || inventory.querySelector('.inventory-register-link')).focus();
+    (button || inventory.querySelector('.filter-button[aria-pressed="true"]')).focus();
 }
 
 inventory.addEventListener('click', function (event) {
@@ -548,8 +654,8 @@ try {
     renderInventory();
 } catch (error) {
     document.querySelector('#inventoryCount').textContent = '목록을 불러오지 못했습니다.';
-    document.querySelector('#storedEmpty').hidden = true;
-    document.querySelector('#consumedEmpty').hidden = true;
+    inventoryEmpty.hidden = true;
+    filterButtons.forEach(function (button) { button.disabled = true; });
     inventoryFeedback.classList.add('is-error');
     inventoryFeedback.textContent = storageFailureMessage(error);
 }
